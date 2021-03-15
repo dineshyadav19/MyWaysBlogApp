@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Blog</title>
+</head>
+<body>
+    <form action="/blogs/<%= blog._id %>?_method=PUT" method="POST">
+        <div>
+            <label for="title">Title</label>
+            <input type="text" id="title" name="blog[title]" value="<%= blog.title %> ">
+        </div>
+        <div>
+            <label for="description">Content</label>
+            <textarea type="text" id="description" name="blog[description]"  value="<%= blog.description %> "></textarea>
+        </div>
+        <button>Edit Blog</button>
+    </form>
+
+    <a href="/blogs/<%= blog._id %>">Back to blogs</a>
+</body>
+</html>
