@@ -2,17 +2,19 @@ const express = require('express')
 const path = require('path')
 const mongoose = require('mongoose')
 const ejsMate =  require('ejs-mate')
-const { blogSchema, commentSchema } = require('./schemas.js')
-const catchAsync = require('./utils/catchAsync')
+const session = require('express-session')
+const flash = require('connect-flash')
 const ExpressError = require('./utils/ExpressError')
 const methodOverride = require('method-override')
-const Blog = require('./models/blog')
-const Comment = require('./models/comment')
+
+const blogs = require('./routes/blogs')
+const comments = require('./routes/comments')
 
 mongoose.connect('mongodb://localhost:27017/mywaysBlog', {
     useNewUrlParser: true,
     useCreateIndex: true,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
+    useFindAndModify: false
 })
 
 const db = mongoose.connection
@@ -29,95 +31,35 @@ app.set('views', path.join(__dirname, 'views'))
 
 app.use(express.urlencoded({ extended : true }))
 app.use(methodOverride('_method'))
+app.use(express.static(path.join(__dirname,'public')))
 
-const validateBlog = (req, res, next) => {
-    const { error } = blogSchema.validate(req.body)
-    if(error) {
-        const msg = error.details.map(el => el.message).join(',')
-        throw new ExpressError(msg, 400)
-    } else {
-        next()
+const sessionConfig = {
+    secret: 'isthisevenaSecret?',
+    resave: false,
+    saveUninitialized: true,
+    cookies: {
+        httpOnly: true,
+        expires: Date.now() + 1000*60*60*24*7,
+        maxAge: 1000*60*60*24*7
     }
 }
 
-const validateComment = (req, res, next) => {
-    const { error } = commentSchema.validate(req.body);
-    if (error) {
-        const msg = error.details.map(el => el.message).join(',')
-        throw new ExpressError(msg, 400)
-    } else {
-        next();
-    }
-}
+app.use(session(sessionConfig))
+app.use(flash())
+
+app.use((req, res, next) => {
+    res.locals.success = req.flash('success')
+    res.locals.error = req.flash('error')
+    next()
+})
+
+app.use('/blogs', blogs)
+app.use('/blogs/:id/comments', comments)
 
 //home Page
 app.get('/', (req, res) => {
     res.render('home')
 })
-
-//Index page
-app.get('/blogs', catchAsync(async (req, res) => {
-    const blogs = await Blog.find({})
-    res.render('blogs/index', { blogs })
-}))
-
-
-//Create new Blog page
-app.get('/blogs/new' , (req, res) => {
-    res.render('blogs/new')
-})
-
-
-//Post that blog 
-app.post('/blogs', validateBlog, catchAsync(async (req, res) => {
-//    if(!req.body.blog) throw new ExpressError('Invalid Blog Data', 400)
-    const blog = new Blog(req.body.blog)
-    await blog.save()
-    res.redirect(`/blogs/${blog._id}`)
-}))
-
-//show page
-app.get('/blogs/:id',catchAsync(async (req, res) => {
-    const blog = await Blog.findById(req.params.id).populate('comments')
-    console.log(blog)
-    res.render('blogs/show', { blog })
-}))
-
-//edit Page
-app.get('/blogs/:id/edit', catchAsync(async (req, res) => {
-    const blog = await Blog.findById(req.params.id)
-    res.render('blogs/edit', { blog })
-}))
-
-//Update 
-app.put('/blogs/:id', validateBlog, catchAsync(async (req, res) => {
-    const { id } = req.params;
-    const blog = await Blog.findByIdAndUpdate(id, {...req.body.blog})
-    res.redirect(`/blogs/${blog._id}`)
-}))
-
-//Delete 
-app.delete('/blogs/:id', catchAsync(async (req, res) => {
-    const { id } = req.params
-    await Blog.findByIdAndDelete(id)
-    res.redirect(`/blogs`)
-}))
-
-app.post('/blogs/:id/comments', validateComment, catchAsync(async (req, res) => {
-    const blog = await Blog.findById(req.params.id);
-    const comment = new Comment(req.body.comment);
-    blog.comments.push(comment);
-    await comment.save();
-    await blog.save();
-    res.redirect(`/blogs/${blog._id}`);
-}))
-
-app.delete('/blogs/:id/comments/:commentId', catchAsync(async (req, res) => {
-    const { id, commentId } = req.params;
-    await Blog.findByIdAndUpdate(id, { $pull: { comments: commentId } });
-    await Comment.findByIdAndDelete(commentId);
-    res.redirect(`/blogs/${id}`);
-}))
 
 app.all('*', (req, res, next) => {
     next(new ExpressError('Page Not Found', 404))
