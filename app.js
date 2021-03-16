@@ -2,11 +2,12 @@ const express = require('express')
 const path = require('path')
 const mongoose = require('mongoose')
 const ejsMate =  require('ejs-mate')
-const { blogSchema } = require('./schemas.js')
+const { blogSchema, commentSchema } = require('./schemas.js')
 const catchAsync = require('./utils/catchAsync')
 const ExpressError = require('./utils/ExpressError')
 const methodOverride = require('method-override')
 const Blog = require('./models/blog')
+const Comment = require('./models/comment')
 
 mongoose.connect('mongodb://localhost:27017/mywaysBlog', {
     useNewUrlParser: true,
@@ -39,6 +40,16 @@ const validateBlog = (req, res, next) => {
     }
 }
 
+const validateComment = (req, res, next) => {
+    const { error } = commentSchema.validate(req.body);
+    if (error) {
+        const msg = error.details.map(el => el.message).join(',')
+        throw new ExpressError(msg, 400)
+    } else {
+        next();
+    }
+}
+
 //home Page
 app.get('/', (req, res) => {
     res.render('home')
@@ -67,7 +78,8 @@ app.post('/blogs', validateBlog, catchAsync(async (req, res) => {
 
 //show page
 app.get('/blogs/:id',catchAsync(async (req, res) => {
-    const blog = await Blog.findById(req.params.id)
+    const blog = await Blog.findById(req.params.id).populate('comments')
+    console.log(blog)
     res.render('blogs/show', { blog })
 }))
 
@@ -89,6 +101,22 @@ app.delete('/blogs/:id', catchAsync(async (req, res) => {
     const { id } = req.params
     await Blog.findByIdAndDelete(id)
     res.redirect(`/blogs`)
+}))
+
+app.post('/blogs/:id/comments', validateComment, catchAsync(async (req, res) => {
+    const blog = await Blog.findById(req.params.id);
+    const comment = new Comment(req.body.comment);
+    blog.comments.push(comment);
+    await comment.save();
+    await blog.save();
+    res.redirect(`/blogs/${blog._id}`);
+}))
+
+app.delete('/blogs/:id/comments/:commentId', catchAsync(async (req, res) => {
+    const { id, commentId } = req.params;
+    await Blog.findByIdAndUpdate(id, { $pull: { comments: commentId } });
+    await Comment.findByIdAndDelete(commentId);
+    res.redirect(`/blogs/${id}`);
 }))
 
 app.all('*', (req, res, next) => {
