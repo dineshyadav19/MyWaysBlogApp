@@ -1,8 +1,10 @@
 const express = require('express')
 const router = express.Router()
 const catchAsync = require('../utils/catchAsync')
+const ExpressError = require('../utils/ExpressError')
 const Blog = require('../models/blog')
 const { blogSchema } = require('../schemas.js')
+const { isLoggedIn } = require('../middleware.js')
 
 
 const validateBlog = (req, res, next) => {
@@ -23,13 +25,13 @@ router.get('/', catchAsync(async (req, res) => {
 
 
 //Create new Blog page
-router.get('/new' , (req, res) => {
+router.get('/new', isLoggedIn, (req, res) => {
     res.render('blogs/new')
 })
 
 
 //Post that blog 
-router.post('/', validateBlog, catchAsync(async (req, res) => {
+router.post('/', isLoggedIn, validateBlog, catchAsync(async (req, res) => {
     const blog = new Blog(req.body.blog)
     await blog.save()
     req.flash('success', 'Successfully Created a new Blog')
@@ -47,7 +49,7 @@ router.get('/:id',catchAsync(async (req, res) => {
 }))
 
 //edit Page
-router.get('/:id/edit', catchAsync(async (req, res) => {
+router.get('/:id/edit', isLoggedIn, catchAsync(async (req, res) => {
     const blog = await Blog.findById(req.params.id)
     if(!blog){
         req.flash('error', "Couldn't find the desired Blog" )
@@ -57,7 +59,7 @@ router.get('/:id/edit', catchAsync(async (req, res) => {
 }))
 
 //Update 
-router.put('/:id', validateBlog, catchAsync(async (req, res) => {
+router.put('/:id', isLoggedIn, validateBlog, catchAsync(async (req, res) => {
     const { id } = req.params;
     const blog = await Blog.findByIdAndUpdate(id, {...req.body.blog})
     req.flash('success', 'Successfully updated the Blog')
@@ -65,7 +67,7 @@ router.put('/:id', validateBlog, catchAsync(async (req, res) => {
 }))
 
 //Delete 
-router.delete('/:id', catchAsync(async (req, res) => {
+router.delete('/:id', isLoggedIn, catchAsync(async (req, res) => {
     const { id } = req.params
     await Blog.findByIdAndDelete(id)
     req.flash('success', 'Blog Deleted')

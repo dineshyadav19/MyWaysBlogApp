@@ -6,9 +6,13 @@ const session = require('express-session')
 const flash = require('connect-flash')
 const ExpressError = require('./utils/ExpressError')
 const methodOverride = require('method-override')
+const passport = require('passport')
+const LocalStrategy = require('passport-local')
+const User = require('./models/user')
 
-const blogs = require('./routes/blogs')
-const comments = require('./routes/comments')
+const blogRoutes = require('./routes/blogs')
+const commentRoutes = require('./routes/comments')
+const userRoutes = require('./routes/users')
 
 mongoose.connect('mongodb://localhost:27017/mywaysBlog', {
     useNewUrlParser: true,
@@ -47,14 +51,33 @@ const sessionConfig = {
 app.use(session(sessionConfig))
 app.use(flash())
 
+app.use(passport.initialize())
+app.use(passport.session())
+
+passport.use(new LocalStrategy(User.authenticate()));
+passport.serializeUser(User.serializeUser())
+passport.deserializeUser(User.deserializeUser())
+
+
 app.use((req, res, next) => {
+    if(!['/login', '/'].includes(req.originalUrl)){
+        req.session.returnTo = req.originalUrl
+    }
+    res.locals.currentUser = req.user
     res.locals.success = req.flash('success')
     res.locals.error = req.flash('error')
     next()
 })
 
-app.use('/blogs', blogs)
-app.use('/blogs/:id/comments', comments)
+app.get('/fake', async (req, res) => {
+    const user = new User({email: 'colt@gmail.com', username: 'Colt'})
+    const register = await User.register(user, 'chicken')
+    res.send(register)
+})
+
+app.use('/', userRoutes)
+app.use('/blogs', blogRoutes)
+app.use('/blogs/:id/comments', commentRoutes)
 
 //home Page
 app.get('/', (req, res) => {
