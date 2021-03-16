@@ -1,25 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Show Blogs</title>
-</head>
-<body>
-   <h1><%= blog.title %> </h1>
-   <h2><%= blog.description %> </h2>
+<% layout('layouts/boilerplate') %>
 
-   <footer>
-       <div>
-           <a href="/blogs/<%= blog._id %>/edit">Edit Blog</a>
-       </div>
-       <p>
-        <form action="/blogs/<%=blog._id%>?_method=DELETE" method="POST">
-            <button>Delete</button>
-        </form>
-        </p>
-       <a href="/blogs">All Blogs</a>
-   </footer>
-</body>
-</html>
+<div class="row">
+    <div class="col-6 offset-3 mb-3">
+        <div class="card" style="width: 18rem;">
+            <img src="<%= blog.image %> " class="card-img-top" alt="<%= blog.title %> ">
+            <div class="card-body">
+              <h5 class="card-title"><%= blog.title %></h5>
+              <p class="card-text"><%= blog.description %></p>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item text-muted">Published By: Dinesh</li>
+              </ul>
+            <div class="card-body">
+                <a href="/blogs/<%= blog._id %>/edit" class="card-link btn btn-warning" >Edit Blog</a>
+                <form class = "d-inline" action="/blogs/<%=blog._id%>?_method=DELETE" method="POST">
+                    <button class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+        <a href="/blogs" class="btn btn-success mt-2" >All Blogs</a>
+    </div>
+</div>
+
