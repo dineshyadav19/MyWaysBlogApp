@@ -13,18 +13,21 @@
               <p class="card-text"><%= blog.description %></p>
             </div>
             <ul class="list-group list-group-flush">
-                <li class="list-group-item text-muted">Published By: Dinesh</li>
-              </ul>
+                <li class="list-group-item text-muted">Published By: <%= blog.author.username %></li>
+            </ul>
+            <% if(currentUser && blog.author.equals(currentUser._id)){ %> 
             <div class="card-body">
                 <a href="/blogs/<%= blog._id %>/edit" class="card-link btn btn-warning" >Edit Blog</a>
                 <form class = "d-inline" action="/blogs/<%=blog._id%>?_method=DELETE" method="POST">
                     <button class="btn btn-danger">Delete</button>
                 </form>
             </div>
+            <% } %> 
         </div>
     </div>
 
     <div class="col-6">
+        <% if(currentUser){ %> 
         <h2>Leave a Comment</h2>
         <form action="/blogs/<%=blog._id%>/comments" method="POST" class="mb-3 validated-form" novalidate>
             <div class="mb-3">
@@ -36,13 +39,17 @@
             </div>
             <button class="btn btn-success">Submit</button>
         </form>
+        <% } %> 
         <% for(let comment of blog.comments) { %>
         <div class="card mb-3 ">
             <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">By: <%= comment.author.username%></h6>
                 <p class="card-text">Comment: <%= comment.body %></p>
+            <% if(currentUser && comment.author.equals(currentUser._id)){ %>
                 <form action="/blogs/<%=blog._id%>/comments/<%=comment._id%>?_method=DELETE" method="POST">
                     <button class="btn btn-sm btn-danger">Delete</button>
                 </form>
+            <% } %> 
             </div>
         </div>
         <% } %>

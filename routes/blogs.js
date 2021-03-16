@@ -1,21 +1,8 @@
 const express = require('express')
 const router = express.Router()
 const catchAsync = require('../utils/catchAsync')
-const ExpressError = require('../utils/ExpressError')
 const Blog = require('../models/blog')
-const { blogSchema } = require('../schemas.js')
-const { isLoggedIn } = require('../middleware.js')
-
-
-const validateBlog = (req, res, next) => {
-    const { error } = blogSchema.validate(req.body)
-    if(error) {
-        const msg = error.details.map(el => el.message).join(',')
-        throw new ExpressError(msg, 400)
-    } else {
-        next()
-    }
-}
+const { isLoggedIn, isAuthor, validateBlog } = require('../middleware.js')
 
 //Index page
 router.get('/', catchAsync(async (req, res) => {
@@ -33,6 +20,7 @@ router.get('/new', isLoggedIn, (req, res) => {
 //Post that blog 
 router.post('/', isLoggedIn, validateBlog, catchAsync(async (req, res) => {
     const blog = new Blog(req.body.blog)
+    blog.author = req.user._id
     await blog.save()
     req.flash('success', 'Successfully Created a new Blog')
     res.redirect(`/blogs/${blog._id}`)
@@ -40,7 +28,12 @@ router.post('/', isLoggedIn, validateBlog, catchAsync(async (req, res) => {
 
 //show page
 router.get('/:id',catchAsync(async (req, res) => {
-    const blog = await Blog.findById(req.params.id).populate('comments')
+    const blog = await Blog.findById(req.params.id).populate({
+        path: 'comments',
+        populate: {
+            path: 'author'
+        }
+    }).populate('author')
     if(!blog){
         req.flash('error', "Couldn't find the desired Blog" )
         return res.redirect('/blogs')
@@ -49,8 +42,9 @@ router.get('/:id',catchAsync(async (req, res) => {
 }))
 
 //edit Page
-router.get('/:id/edit', isLoggedIn, catchAsync(async (req, res) => {
-    const blog = await Blog.findById(req.params.id)
+router.get('/:id/edit', isLoggedIn, isAuthor, catchAsync(async (req, res) => {
+    const { id } = req.params;
+    const blog = await Blog.findById(id)
     if(!blog){
         req.flash('error', "Couldn't find the desired Blog" )
         return res.redirect('/blogs')
@@ -59,7 +53,7 @@ router.get('/:id/edit', isLoggedIn, catchAsync(async (req, res) => {
 }))
 
 //Update 
-router.put('/:id', isLoggedIn, validateBlog, catchAsync(async (req, res) => {
+router.put('/:id', isLoggedIn, isAuthor, validateBlog, catchAsync(async (req, res) => {
     const { id } = req.params;
     const blog = await Blog.findByIdAndUpdate(id, {...req.body.blog})
     req.flash('success', 'Successfully updated the Blog')
@@ -67,7 +61,7 @@ router.put('/:id', isLoggedIn, validateBlog, catchAsync(async (req, res) => {
 }))
 
 //Delete 
-router.delete('/:id', isLoggedIn, catchAsync(async (req, res) => {
+router.delete('/:id', isLoggedIn, isAuthor, catchAsync(async (req, res) => {
     const { id } = req.params
     await Blog.findByIdAndDelete(id)
     req.flash('success', 'Blog Deleted')

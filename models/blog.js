@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const Comment = require('./comment')
+const User = require('./user')
 const Schema = mongoose.Schema
 
 const BlogSchema = new Schema({
@@ -8,11 +9,8 @@ const BlogSchema = new Schema({
     description: String,
     createdAt: { type: Date, default: Date.now },
 	author: {
-		id: {
-			type: Schema.Types.ObjectId,
-			ref: 'User'
-		},
-		username: String
+		type: Schema.Types.ObjectId,
+		ref: 'User'
 	},
 	comments: [
 		{
