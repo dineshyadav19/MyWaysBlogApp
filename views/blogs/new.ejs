@@ -5,22 +5,19 @@
         New Blog
     </h2>
     <div class="col-6 offset-3">
-        <form action="/blogs" method="POST" novalidate class="validated-form">
-            <div>
+        <form action="/blogs" method="POST" novalidate class="validated-form" enctype="multipart/form-data">
+            <div class="mb-3">
                 <label class="form-label" for="title">Title</label>
                 <input class="form-control" type="text" id="title" name="blog[title]" required>
                 <div class="valid-feedback">
                     Looks good!
                 </div>
             </div>
-            <div>
-                <label class="form-label" for="image">Image Url</label>
-                <input class="form-control" type="text" id="image" name="blog[image]" required>
-                <div class="valid-feedback">
-                    Looks good!
-                </div>
+            <div class="input-group mb-3">
+                <input type="file" class="form-control" id="image" name="image" multiple>
+                <label class="input-group-text" for="image">Upload</label>
             </div>
-            <div>
+            <div class="mb-3">
                 <label class="form-label" for="description">Content</label>
                 <textarea class="form-control" type="text" id="description" name="blog[description]" required></textarea>
                 <div class="valid-feedback">
@@ -34,4 +31,6 @@
         <a href="/blogs">All Blogs</a>
     </div>
 </div>
+
+
 

@@ -1,3 +1,7 @@
+if(process.env.NODE_ENV !== 'production'){
+    require('dotenv').config()
+}
+
 const express = require('express')
 const path = require('path')
 const mongoose = require('mongoose')
@@ -9,12 +13,14 @@ const methodOverride = require('method-override')
 const passport = require('passport')
 const LocalStrategy = require('passport-local')
 const User = require('./models/user')
+const mongoSanitize = require('express-mongo-sanitize');
+const dbUrl = process.env.DB_URL || 'mongodb://localhost:27017/mywaysBlog';
 
 const blogRoutes = require('./routes/blogs')
 const commentRoutes = require('./routes/comments')
 const userRoutes = require('./routes/users')
 
-mongoose.connect('mongodb://localhost:27017/mywaysBlog', {
+mongoose.connect(dbUrl, {
     useNewUrlParser: true,
     useCreateIndex: true,
     useUnifiedTopology: true,
@@ -36,13 +42,18 @@ app.set('views', path.join(__dirname, 'views'))
 app.use(express.urlencoded({ extended : true }))
 app.use(methodOverride('_method'))
 app.use(express.static(path.join(__dirname,'public')))
+app.use(mongoSanitize());
+
+const secret = process.env.SECRET || 'isthisevenaSecret?'
 
 const sessionConfig = {
-    secret: 'isthisevenaSecret?',
+    name: 'session',
+    secret,
     resave: false,
     saveUninitialized: true,
     cookies: {
         httpOnly: true,
+        //secure: true,
         expires: Date.now() + 1000*60*60*24*7,
         maxAge: 1000*60*60*24*7
     }

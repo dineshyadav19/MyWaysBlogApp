@@ -5,7 +5,10 @@ const Schema = mongoose.Schema
 
 const BlogSchema = new Schema({
     title: String,
-    image: String,
+    images: [{
+        url: String,
+        filename: String
+    }],
     description: String,
     createdAt: { type: Date, default: Date.now },
 	author: {

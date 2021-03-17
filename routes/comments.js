@@ -1,27 +1,11 @@
 const express = require('express')
 const router = express.Router({ mergeParams: true })
 const catchAsync = require('../utils/catchAsync')
-const Blog = require('../models/blog')
-const Comment = require('../models/comment')
+const comments = require('../controller/comments')
 const { isLoggedIn, isCommentAuthor, validateComment } = require('../middleware.js')
 
-router.post('/',isLoggedIn, validateComment, catchAsync(async (req, res) => {
-    const blog = await Blog.findById(req.params.id);
-    const comment = new Comment(req.body.comment);
-    comment.author = req.user._id
-    blog.comments.push(comment);
-    await comment.save();
-    await blog.save();
-    req.flash('success', 'Comment Added!!!')
-    res.redirect(`/blogs/${blog._id}`);
-}))
+router.post('/',isLoggedIn, validateComment, catchAsync(comments.createComment))
 
-router.delete('/:commentId', isLoggedIn, isCommentAuthor, catchAsync(async (req, res) => {
-    const { id, commentId } = req.params;
-    await Blog.findByIdAndUpdate(id, { $pull: { comments: commentId } });
-    await Comment.findByIdAndDelete(commentId);
-    req.flash('success', 'Comment Deleted')
-    res.redirect(`/blogs/${id}`);
-}))
+router.delete('/:commentId', isLoggedIn, isCommentAuthor, catchAsync(comments.deleteComment))
 
 module.exports = router
